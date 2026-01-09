@@ -1,5 +1,5 @@
 import gpxpy
-import srtm
+from elevation_sources import SRTMSource, USGSPointQuerySource
 
 with open('data/input/YoungDrive.gpx', 'r')  as gpx_file:
     gpx = gpxpy.parse(gpx_file)
@@ -15,18 +15,30 @@ for track in gpx.tracks:
         for point in segment.points[:5]:
             print(f"        Lat: {point.latitude:.6f}, Lon: {point.longitude:.6f}, Elevation: {point.elevation}m")
 
-# Initializw SRTM elevation data
-elevation_data = srtm.get_data()
+# Choose elevation source
+source_choice = "usgs_point"
+
+if source_choice == "srtm":
+    elevation_source = SRTMSource()
+elif source_choice == "usgs_point":
+    elevation_source = USGSPointQuerySource()
+else:
+    raise ValueError(f"Unknown source: {source_choice}")
+print(f"Using elevation source: {elevation_source.get_name()}\n")
 
 # Function to correct elevations
 def correct_elevation(point):
-    """Fetch correct elevation from SRTM data for a given point"""
-    corrected = elevation_data.get_elevation(point.latitude, point.longitude)
-    return corrected
+    """Fetch correct elevation for a given point"""
+    return elevation_source.get_elevation(point.latitude, point.longitude)
 # Correction Loop
 for track in gpx.tracks:
     for segment in track.segments:
+        point_count = 0
         for point in segment.points:
+
+            if point_count >= 10:
+                break
+
             original_elevation = point.elevation
             point.original_elevation = original_elevation
             corrected_elevation = correct_elevation(point)
@@ -35,7 +47,7 @@ for track in gpx.tracks:
                 point.elevation = corrected_elevation
                 print(f"Original: {original_elevation:.1f}m -> Corrected: {corrected_elevation:.1f}m")
 
-
+            point_count += 1
 # Calculate summary statistics
 original_elevations = []
 corrected_elevations = []
