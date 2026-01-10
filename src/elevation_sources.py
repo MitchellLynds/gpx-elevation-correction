@@ -3,6 +3,8 @@ import requests
 import rasterio
 from rasterio.io import MemoryFile
 import numpy as np
+import json
+import os
 
 class ElevationSource(ABC):
     """Abstract base class for elevation data sources"""
@@ -29,10 +31,31 @@ class SRTMSource(ElevationSource):
         return "SRTM"
     
 class USGSPointQuerySource(ElevationSource):
-    def __init__(self):
+    def __init__(self, cache_file='data/cache/usgs_cache.json'):
         self.base_url = "https://epqs.nationalmap.gov/v1/json"
-        self.cache = {}
+        self.cache_file = cache_file
+        self.cache = self._load_cache()
+
+    def _load_cache(self):
+        """Load cache from disk if it exists"""
+        if os.path.exists(self.cache_file):
+            try:
+                with open(self.cache_file, 'r') as f:
+                    print(f"Loaded {len(json.load(f))} cached elevations")
+                    f.seek(0)
+                    return json.load(f)
+            except:
+                pass
+
+        # Create cache directory if it doesn't exist
+        os.makedirs(os.path.dirname(self.cache_file), exist_ok=True)
+        return {}
     
+    def _save_cache(self):
+        """Save cache to disk"""
+        with open(self.cache_file, 'w') as f:
+            json.dum(self.cache, f)
+
     def get_elevation(self, latitude, longitude):
         cache_key = f"{latitude:.6f},{longitude:.6f}"
         if cache_key in self.cache:
@@ -59,6 +82,7 @@ class USGSPointQuerySource(ElevationSource):
                 if elevation == -1000000 or elevation < -500 or elevation > 9000:
                     return None
                 self.cache[cache_key] = elevation
+                self._save_cache()
                 return elevation
             return None
             

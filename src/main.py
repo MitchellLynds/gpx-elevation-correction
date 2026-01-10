@@ -1,5 +1,6 @@
 import gpxpy
 from elevation_sources import SRTMSource, USGSPointQuerySource
+from visualization import create_elevation_profile
 
 with open('data/input/YoungDrive.gpx', 'r')  as gpx_file:
     gpx = gpxpy.parse(gpx_file)
@@ -91,6 +92,7 @@ print(f"Original - Gain: {original_gain:.1f}m, Loss: {original_loss:.1f}m")
 print(f"Corrected - Gain: {corrected_gain:.1f}m, Loss: {corrected_loss:.1f}m")
 print(f"Difference - Gain: {abs(original_gain - corrected_gain):.1f}m, Loss: {abs(original_loss - corrected_loss):.1f}m")
 
+create_elevation_profile(gpx)
 
 output_path = 'data/output/corrected_sample.gpx'
 with open(output_path, 'w') as output_file:
