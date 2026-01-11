@@ -54,7 +54,7 @@ class USGSPointQuerySource(ElevationSource):
     def _save_cache(self):
         """Save cache to disk"""
         with open(self.cache_file, 'w') as f:
-            json.dum(self.cache, f)
+            json.dump(self.cache, f)
 
     def get_elevation(self, latitude, longitude):
         cache_key = f"{latitude:.6f},{longitude:.6f}"
